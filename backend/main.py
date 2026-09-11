@@ -6,6 +6,7 @@ import asyncio
 import logging
 import threading
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Optional
 from pathlib import Path
 
@@ -41,10 +42,29 @@ latest_frame: Optional[bytes] = None
 frame_lock = threading.Lock()
 
 
+# ─── DB Seeding ─────────────────────────────────────────────────────────────
+def _seed_alert_types(db: Session):
+    """Ensure base alert types exist so /detections can resolve them by name."""
+    defaults = [
+        {"name": "LONE_WOMAN",  "description": "Woman detected alone at night",       "severity": "HIGH"},
+        {"name": "SURROUNDED",  "description": "Woman surrounded by men at night",     "severity": "HIGH"},
+        {"name": "SOS",         "description": "SOS gesture or button activated",      "severity": "CRITICAL"},
+    ]
+    for d in defaults:
+        if not db.query(AlertType).filter_by(name=d["name"]).first():
+            db.add(AlertType(**d))
+    db.commit()
+
+
 # ─── Lifespan ───────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     alert_engine.set_event_loop(asyncio.get_running_loop())
+    db = SessionLocal()
+    try:
+        _seed_alert_types(db)
+    finally:
+        db.close()
     yield
 
 
@@ -165,6 +185,46 @@ def get_cameras(db: Session = Depends(get_db)):
 
 
 # ─── Detections ─────────────────────────────────────────────────────────────
+@app.get("/detections/summary")
+def get_detection_summary(db: Session = Depends(get_db)):
+    """
+    Returns aggregated gender counts from the most recent detection event
+    plus totals across all events today. Used by dashboard and mobile app.
+    """
+    from sqlalchemy import func as sqlfunc
+
+    # Latest single event (for "right now" display)
+    latest = (
+        db.query(DetectionEvent)
+        .order_by(DetectionEvent.timestamp.desc())
+        .first()
+    )
+
+    # Today's totals
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = db.query(
+        sqlfunc.sum(DetectionEvent.total_people).label("total_people"),
+        sqlfunc.sum(DetectionEvent.male_count).label("male_count"),
+        sqlfunc.sum(DetectionEvent.female_count).label("female_count"),
+        sqlfunc.count(DetectionEvent.id).label("event_count"),
+    ).filter(DetectionEvent.timestamp >= today_start).one()
+
+    return {
+        "latest": {
+            "total_people": latest.total_people if latest else 0,
+            "male_count": latest.male_count if latest else 0,
+            "female_count": latest.female_count if latest else 0,
+            "timestamp": latest.timestamp.isoformat() if latest else None,
+        },
+        "today": {
+            "total_people": int(today.total_people or 0),
+            "male_count": int(today.male_count or 0),
+            "female_count": int(today.female_count or 0),
+            "event_count": int(today.event_count or 0),
+        },
+    }
+
+
 @app.post("/detections")
 def create_detection(
     camera_id: int,
@@ -425,20 +485,41 @@ def get_hotspots(db: Session = Depends(get_db)):
     locations = db.query(Location).all()
     results = []
     for location in locations:
-        alert_count = (
+        alerts = (
             db.query(Alert)
             .join(Camera, Alert.camera_id == Camera.id)
             .filter(Camera.location_id == location.id)
-            .count()
+            .all()
         )
-        risk_score = calculate_risk_score(alert_count)
+        alert_count = len(alerts)
+        risk_score = calculate_risk_score(alerts)
         risk_level = get_risk_level(risk_score)
+
+        # Upsert Hotspot row so DB stays current
+        hotspot = db.query(Hotspot).filter_by(location_id=location.id).first()
+        if hotspot:
+            hotspot.alert_count = alert_count
+            hotspot.risk_score = risk_score
+            hotspot.risk_level = risk_level
+            hotspot.last_calculated = datetime.utcnow()
+        else:
+            hotspot = Hotspot(
+                location_id=location.id,
+                alert_count=alert_count,
+                risk_score=risk_score,
+                risk_level=risk_level,
+            )
+            db.add(hotspot)
+        db.commit()
+
         results.append({
             "location_id": location.id,
             "location": location.name,
             "alert_count": alert_count,
-            "risk_score": risk_score,
-            "risk_level": risk_level
+            "risk_score": float(risk_score),
+            "risk_level": risk_level,
+            "latitude": float(location.latitude) if location.latitude is not None else None,
+            "longitude": float(location.longitude) if location.longitude is not None else None,
         })
     return results
 

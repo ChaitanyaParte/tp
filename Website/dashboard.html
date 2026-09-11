@@ -293,7 +293,7 @@
           <div class="alert-item-icon ${type}">${ICON_PATHS[icon]}</div>
           <div class="alert-item-body">
             <div class="alert-item-title">${a.description || 'Alert'}</div>
-            <div class="alert-item-meta">${a.severity || ''} · ${timeAgo(a.created_at)}</div>
+            <div class="alert-item-meta">${a.severity || ''} · ${timeAgo(a.timestamp || a.created_at)}</div>
           </div>
           <span class="badge badge-${type}">${a.severity || 'Info'}</span>
         </a>`;
@@ -358,22 +358,33 @@
     // ── Fetch Detections summary ──────────────────────────────────────────────────
     async function loadDetectionStats() {
       try {
-        // Use alerts as proxy since we don't have GET /detections
-        // Pull gender totals from alerts list
-        const res = await fetch(`${API}/alerts`);
-        const alerts = await res.json();
+        const res = await fetch(`${API}/detections/summary`);
+        const data = await res.json();
 
-        // Count from SOS alerts for people stats — rough estimate
-        // Real counts come from AI pipeline via POST /detections
-        // For now show alert-derived stats
-        const totalAlerts = alerts.length;
-        document.getElementById('stat-people').textContent = totalAlerts > 0 ? '—' : '0';
-        document.getElementById('stat-women').textContent = '—';
-        document.getElementById('mini-total').textContent = totalAlerts;
-        document.getElementById('mini-women').textContent = '—';
-        document.getElementById('mini-men').textContent = '—';
-        document.getElementById('legend-women').textContent = '—';
-        document.getElementById('legend-men').textContent = '—';
+        const latest = data.latest;
+        const today  = data.today;
+
+        // Top stat cards
+        document.getElementById('stat-people').textContent  = today.total_people;
+        document.getElementById('stat-women').textContent   = today.female_count;
+
+        // Mini-stats below the camera feed (show latest frame values)
+        document.getElementById('mini-total').textContent   = latest.total_people;
+        document.getElementById('mini-women').textContent   = latest.female_count;
+        document.getElementById('mini-men').textContent     = latest.male_count;
+
+        // Gender distribution donut
+        document.getElementById('legend-women').textContent = today.female_count;
+        document.getElementById('legend-men').textContent   = today.male_count;
+
+        const w = today.female_count || 0;
+        const m = today.male_count   || 0;
+        if (w + m > 0 && typeof drawDonut === 'function') {
+          drawDonut(document.getElementById('gender-donut'), [
+            { value: w, color: '#6C4CE8' },
+            { value: m, color: '#3B82F6' },
+          ]);
+        }
       } catch (e) {
         console.error('Detection stats failed:', e);
       }
@@ -381,7 +392,7 @@
 
     // ── WebSocket: live alert push ────────────────────────────────────────────────
     function connectWebSocket() {
-      const ws = new WebSocket(`ws://127.0.0.1:8000/ws/alerts`);
+      const ws = new WebSocket(`ws://${new URL(API).host}/ws/alerts`);
 
       ws.onopen = () => console.log('[WS] Dashboard connected');
 

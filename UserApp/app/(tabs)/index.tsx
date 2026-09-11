@@ -5,8 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from "react-native";
+import { Image } from "expo-image";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -15,13 +15,39 @@ import { API_BASE } from "../../constants/api";
 export default function HomeScreen() {
   const [streamError, setStreamError] = useState(false);
   const [streamUri, setStreamUri] = useState(`${API_BASE}/snapshot?t=0`);
+  const [activeAlerts, setActiveAlerts] = useState<number>(0);
+  const [detectionStats, setDetectionStats] = useState({ women: 0, men: 0, total: 0 });
 
   useEffect(() => {
     const interval = setInterval(() => {
       setStreamUri(`${API_BASE}/snapshot?t=${Date.now()}`);
-      setStreamError(false); // auto-retry every second
-    }, 1000);
+      setStreamError(false);
+    }, 500);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [alertsRes, detRes] = await Promise.all([
+          fetch(`${API_BASE}/alerts`),
+          fetch(`${API_BASE}/detections/summary`),
+        ]);
+        const alerts = await alertsRes.json();
+        setActiveAlerts(alerts.filter((a: any) => a.status === 'ACTIVE').length);
+
+        const det = await detRes.json();
+        setDetectionStats({
+          women: det.latest.female_count,
+          men:   det.latest.male_count,
+          total: det.latest.total_people,
+        });
+      } catch (_) {}
+    };
+
+    fetchStats();
+    const poll = setInterval(fetchStats, 10000); // refresh every 10 s
+    return () => clearInterval(poll);
   }, []);
 
   return (
@@ -60,7 +86,7 @@ export default function HomeScreen() {
 
             <View style={styles.safetyInfo}>
               <View style={styles.safetyTitleRow}>
-                <Text style={styles.safetyTitle}>You're Safe</Text>
+                <Text style={styles.safetyTitle}>{activeAlerts > 0 ? 'Alert Active' : "You're Safe"}</Text>
                 <View style={styles.liveBadge}>
                   <View style={styles.liveDot} />
                   <Text style={styles.liveText}>LIVE</Text>
@@ -69,6 +95,24 @@ export default function HomeScreen() {
               <Text style={styles.safetySubtitle}>
                 Your surroundings are being monitored.
               </Text>
+            </View>
+          </View>
+
+          {/* Detection counts row */}
+          <View style={styles.safetyCountRow}>
+            <View style={styles.safetyCount}>
+              <Text style={styles.safetyCountNum}>{detectionStats.total}</Text>
+              <Text style={styles.safetyCountLabel}>Total</Text>
+            </View>
+            <View style={styles.safetyCountDivider} />
+            <View style={styles.safetyCount}>
+              <Text style={[styles.safetyCountNum, { color: '#8B5CF6' }]}>{detectionStats.women}</Text>
+              <Text style={styles.safetyCountLabel}>Women</Text>
+            </View>
+            <View style={styles.safetyCountDivider} />
+            <View style={styles.safetyCount}>
+              <Text style={[styles.safetyCountNum, { color: '#3B82F6' }]}>{detectionStats.men}</Text>
+              <Text style={styles.safetyCountLabel}>Men</Text>
             </View>
           </View>
 
@@ -110,7 +154,9 @@ export default function HomeScreen() {
             <Image
               source={{ uri: streamUri }}
               style={styles.streamImage}
-              resizeMode="cover"
+              contentFit="cover"
+              recyclingKey="live-stream"
+              transition={0}
               onError={() => setStreamError(true)}
             />
           )}
@@ -151,7 +197,11 @@ export default function HomeScreen() {
 
         <View style={styles.actionsGrid}>
 
-          <TouchableOpacity style={styles.actionCard} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            activeOpacity={0.8}
+            onPress={() => router.push("/(tabs)/safe-circle")}
+          >
             <View style={[styles.actionIcon, styles.pinkIcon]}>
               <Text>💗</Text>
             </View>
@@ -171,7 +221,11 @@ export default function HomeScreen() {
             <Text style={styles.actionDescription}>Let someone know where you are</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            activeOpacity={0.8}
+            onPress={() => router.push("/(tabs)/map")}
+          >
             <View style={[styles.actionIcon, styles.purpleIcon]}>
               <Text>🗺️</Text>
             </View>
@@ -179,7 +233,11 @@ export default function HomeScreen() {
             <Text style={styles.actionDescription}>Explore safer areas</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={styles.actionCard}
+            activeOpacity={0.8}
+            onPress={() => router.push("/(tabs)/alerts")}
+          >
             <View style={[styles.actionIcon, styles.yellowIcon]}>
               <Text>🔔</Text>
             </View>
@@ -219,18 +277,18 @@ export default function HomeScreen() {
 
           <View style={styles.areaStats}>
             <View style={styles.stat}>
-              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statNumber}>{activeAlerts}</Text>
               <Text style={styles.statLabel}>Active alerts</Text>
             </View>
             <View style={styles.statLine} />
             <View style={styles.stat}>
-              <Text style={styles.statNumber}>ON</Text>
-              <Text style={styles.statLabel}>Protection</Text>
+              <Text style={styles.statNumber}>{detectionStats.women}</Text>
+              <Text style={styles.statLabel}>Women seen</Text>
             </View>
             <View style={styles.statLine} />
             <View style={styles.stat}>
-              <Text style={styles.statNumber}>24/7</Text>
-              <Text style={styles.statLabel}>Monitoring</Text>
+              <Text style={styles.statNumber}>{detectionStats.men}</Text>
+              <Text style={styles.statLabel}>Men seen</Text>
             </View>
           </View>
         </View>
@@ -273,6 +331,11 @@ const styles = StyleSheet.create({
 
   safetyCard: { backgroundColor: "#FFFFFF", borderRadius: 23, padding: 18, marginBottom: 20, borderWidth: 1, borderColor: "#F4DDE7", elevation: 2, shadowColor: "#B66F89", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
   safetyTop: { flexDirection: "row", alignItems: "center" },
+  safetyCountRow: { flexDirection: "row", alignItems: "center", marginTop: 14, marginBottom: 4 },
+  safetyCount: { flex: 1, alignItems: "center" },
+  safetyCountNum: { fontSize: 17, fontWeight: "900", color: "#292235" },
+  safetyCountLabel: { fontSize: 9, color: "#9A909B", marginTop: 3 },
+  safetyCountDivider: { width: 1, height: 26, backgroundColor: "#F2E8ED" },
   shieldContainer: { width: 62, height: 62, borderRadius: 21, backgroundColor: "#FCEAF1", justifyContent: "center", alignItems: "center" },
   shield: { fontSize: 31 },
   safetyInfo: { flex: 1, marginLeft: 15 },

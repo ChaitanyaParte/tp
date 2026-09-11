@@ -18,7 +18,8 @@ interface AlertItem {
   status: string;
   description: string;
   confidence: number;
-  created_at?: string;
+  timestamp?: string;    // backend field name
+  created_at?: string;   // legacy alias — kept for compatibility
 }
 
 function timeAgo(dateStr?: string) {
@@ -282,7 +283,7 @@ export default function AlertsScreen() {
                   {alert.description || 'Safety Alert'}
                 </Text>
                 <Text style={styles.alertMeta}>
-                  {alert.severity} · {timeAgo(alert.created_at)}
+                  {alert.severity} · {timeAgo(alert.timestamp || alert.created_at)}
                 </Text>
               </View>
 

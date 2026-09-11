@@ -4,6 +4,7 @@ All thresholds, model paths, timing windows, and alert parameters
 are centralized here for easy tuning without touching pipeline logic.
 """
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple
@@ -111,3 +112,9 @@ class StreamConfig:
     TARGET_FPS: int = 15
     # Buffer size for frame queue
     FRAME_BUFFER_SIZE: int = 32
+    # Backend server URL for detection/alert POSTs and MJPEG frame push
+    BACKEND_URL: str = field(default_factory=lambda: os.getenv("BACKEND_URL", "http://172.23.79.101:8000"))
+    # Camera ID reported in backend payloads
+    CAMERA_ID: int = 1
+    # How often (in frames) to POST detection counts to the backend
+    SEND_EVERY_N_FRAMES: int = 30
