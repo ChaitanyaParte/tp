@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCTV Cameras — Women Safety Analytics</title>
+  <meta name="description" content="Manage and monitor all registered CCTV cameras in the surveillance network." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .view-btn { padding: 7px 12px; background: var(--white); border: none; cursor: pointer; color: var(--text-secondary); font-size: 13px; display: flex; align-items: center; transition: background .15s; }
+    .view-btn:hover { background: var(--bg); }
+    .view-btn.active { background: var(--primary-light); color: var(--primary); }
+    .view-btn svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 1.8; }
+  </style>
+</head>
+<body data-page="CCTV Cameras" data-sub="Manage and monitor all surveillance cameras">
+<div class="app-shell">
+  <div class="main-area">
+    <div class="page-content">
+
+      <!-- Header row -->
+      <div class="flex-between mb-20">
+        <div class="flex-center gap-8">
+          <!-- Summary pills -->
+          <div style="display:flex;gap:10px;">
+            <div style="background:var(--success-bg);color:#15803D;padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;">
+              ● 230 Online
+            </div>
+            <div style="background:var(--bg);color:var(--text-secondary);padding:6px 14px;border-radius:8px;font-size:13px;font-weight:600;">
+              ○ 18 Offline
+            </div>
+          </div>
+        </div>
+        <div class="flex-center gap-8">
+          <div class="view-toggle">
+            <button class="view-btn active" id="grid-btn" onclick="setView('grid')" title="Grid view">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </button>
+            <button class="view-btn" id="list-btn" onclick="setView('list')" title="List view">
+              <svg viewBox="0 0 24 24" fill="none"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showToast('Add Camera form opened','info')">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Camera
+          </button>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar mb-20">
+        <div class="search-wrap input-with-icon" style="flex:1;max-width:300px;">
+          <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
+          <input class="form-input" type="search" placeholder="Search camera name or location…" oninput="filterCameras(this.value)" />
+        </div>
+        <select class="form-select" style="width:auto;" onchange="filterByStatus(this.value)">
+          <option value="">All Status</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </select>
+        <select class="form-select" style="width:auto;">
+          <option>All Zones</option>
+          <option>Zone 1</option>
+          <option>Zone 3</option>
+          <option>Zone 5</option>
+          <option>Zone 7</option>
+        </select>
+      </div>
+
+      <!-- Grid view -->
+      <div class="camera-grid" id="cam-grid-view"></div>
+
+      <!-- List view (table) -->
+      <div class="card" id="cam-list-view" style="display:none;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Camera</th><th>Location</th><th>Zone</th><th>Status</th>
+                <th>Last Active</th><th>People Now</th><th>Alerts Today</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cam-list-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span>Showing 1–15 of 248 cameras</span>
+          <div class="pagination-pages">
+            <div class="page-btn active">1</div>
+            <div class="page-btn">2</div>
+            <div class="page-btn">3</div>
+            <div class="page-btn">…</div>
+            <div class="page-btn">17</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Camera Detail Panel -->
+<div class="modal-overlay" id="cam-panel">
+  <div class="detail-panel">
+    <div class="detail-panel-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;" id="panel-cam-name">Camera Details</div>
+        <div style="font-size:12px;color:var(--text-secondary);" id="panel-cam-loc">—</div>
+      </div>
+      <button class="close-btn" onclick="closePanel('cam-panel')">✕</button>
+    </div>
+    <div class="detail-panel-body">
+      <div class="snapshot-card"><canvas id="panel-cam-feed" style="width:100%;height:100%;"></canvas></div>
+      <div class="info-row"><span class="info-label">Camera ID</span><span class="info-value fw-700" id="panel-cam-id">—</span></div>
+      <div class="info-row"><span class="info-label">Location</span><span class="info-value" id="panel-d-loc">—</span></div>
+      <div class="info-row"><span class="info-label">Zone</span><span class="info-value" id="panel-zone">—</span></div>
+      <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="panel-d-status">—</span></div>
+      <div class="info-row"><span class="info-label">Last Active</span><span class="info-value" id="panel-last">—</span></div>
+      <div class="info-row"><span class="info-label">IP Address</span><span class="info-value" id="panel-ip">—</span></div>
+      <div class="info-row"><span class="info-label">Resolution</span><span class="info-value">1080p / 30fps</span></div>
+      <div class="info-row"><span class="info-label">People Now</span><span class="info-value fw-700" id="panel-people-now">—</span></div>
+      <div class="info-row"><span class="info-label">Alerts Today</span><span class="info-value" id="panel-alerts-today">—</span></div>
+      <div style="display:flex;gap:8px;margin-top:20px;">
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="location.href='live-monitoring.html'">View Live Feed</button>
+        <button class="btn btn-outline" onclick="showToast('Camera settings opened','info');closePanel('cam-panel')">Edit</button>
+        <button class="btn btn-ghost" style="color:var(--critical);" onclick="showToast('Camera disabled','error');closePanel('cam-panel')">Disable</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/layout.js"></script>
+<script src="js/main.js"></script>
+<script>
+const CAMS = [
+  { id:'CAM-07', name:'MG Road Junction',      zone:'Zone 3', status:'online',  last:'Just now',   people:6,  alerts:8,  ip:'192.168.1.107' },
+  { id:'CAM-12', name:'Koramangala Market',    zone:'Zone 5', status:'online',  last:'Just now',   people:9,  alerts:5,  ip:'192.168.1.112' },
+  { id:'CAM-04', name:'HSR Layout',            zone:'Zone 6', status:'online',  last:'Just now',   people:2,  alerts:3,  ip:'192.168.1.104' },
+  { id:'CAM-19', name:'Electronic City Fly.',   zone:'Zone 8', status:'online',  last:'2 min ago',  people:4,  alerts:4,  ip:'192.168.1.119' },
+  { id:'CAM-33', name:'Bannerghatta Road',     zone:'Zone 7', status:'online',  last:'Just now',   people:7,  alerts:6,  ip:'192.168.1.133' },
+  { id:'CAM-02', name:'Shivajinagar Bus Stand',zone:'Zone 1', status:'online',  last:'Just now',   people:11, alerts:4,  ip:'192.168.1.102' },
+  { id:'CAM-15', name:'Jayanagar Circle',      zone:'Zone 4', status:'offline', last:'3 hrs ago',  people:0,  alerts:0,  ip:'192.168.1.115' },
+  { id:'CAM-08', name:'Cubbon Park Gate',      zone:'Zone 2', status:'online',  last:'Just now',   people:3,  alerts:1,  ip:'192.168.1.108' },
+  { id:'CAM-21', name:'Majestic Bus Stand',    zone:'Zone 1', status:'online',  last:'Just now',   people:14, alerts:9,  ip:'192.168.1.121' },
+  { id:'CAM-11', name:'Whitefield Signal',     zone:'Zone 9', status:'online',  last:'1 min ago',  people:5,  alerts:2,  ip:'192.168.1.111' },
+  { id:'CAM-31', name:'Hebbal Flyover',        zone:'Zone 10',status:'offline', last:'8 hrs ago',  people:0,  alerts:0,  ip:'192.168.1.131' },
+  { id:'CAM-44', name:'BTM Layout',            zone:'Zone 6', status:'online',  last:'Just now',   people:4,  alerts:3,  ip:'192.168.1.144' },
+];
+
+let currentView = 'grid';
+let filteredCams = [...CAMS];
+
+function renderGrid() {
+  const grid = document.getElementById('cam-grid-view');
+  grid.innerHTML = '';
+  filteredCams.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'camera-card';
+    card.innerHTML = `
+      <div class="camera-thumb" id="thumb-wrap-${i}">
+        ${c.status === 'online' ? `<canvas id="thumb-canvas-${i}" style="width:100%;height:100%;"></canvas>` : '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#555;font-size:12px;font-weight:600;">OFFLINE</div>'}
+        <div class="camera-thumb-overlay"></div>
+        <div class="camera-badge"><span class="live-dot">${c.status === 'online' ? 'LIVE' : 'OFF'}</span></div>
+      </div>
+      <div class="camera-card-body">
+        <div class="camera-card-name">${c.id} — ${c.name}</div>
+        <div class="camera-card-loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${c.zone}</div>
+        <div class="camera-card-stats">
+          <div class="camera-card-stat"><strong>${c.people}</strong>People</div>
+          <div class="camera-card-stat"><strong style="color:#EF4444;">${c.alerts}</strong>Alerts</div>
+          <div class="camera-card-stat"><strong style="font-size:12px;">${c.last}</strong>Last Active</div>
+        </div>
+        <div class="camera-card-actions">
+          <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center;" onclick="openCamPanel(${i})">View</button>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Edit form opened','info')">Edit</button>
+          <button class="btn btn-ghost btn-sm" style="color:${c.status==='online'?'#EF4444':'#22C55E'};" onclick="showToast(this.textContent.trim()+' command sent','success')">${c.status==='online'?'Disable':'Enable'}</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+    if (c.status === 'online') {
+      setTimeout(() => {
+        const canvas = document.getElementById('thumb-canvas-' + i);
+        if (canvas) { canvas.width = canvas.offsetWidth || 280; canvas.height = canvas.offsetHeight || 158; drawCameraFeed(canvas, { camId: c.id.replace('CAM-',''), people: PEOPLE_DATA.slice(0, Math.min(c.people,4)) }); }
+      }, 50);
+    }
+  });
+}
+
+function renderList() {
+  const tbody = document.getElementById('cam-list-tbody');
+  tbody.innerHTML = filteredCams.map((c,i) => `
+  <tr onclick="openCamPanel(${i})" style="cursor:pointer;">
+    <td><div class="user-cell"><span class="badge badge-neutral">${c.id}</span><span style="font-weight:600;">${c.name}</span></div></td>
+    <td>${c.name}</td>
+    <td><span class="text-sm text-muted">${c.zone}</span></td>
+    <td><span class="status-dot ${c.status}">${c.status==='online'?'Online':'Offline'}</span></td>
+    <td class="text-sm text-muted">${c.last}</td>
+    <td style="font-weight:600;">${c.people}</td>
+    <td>${c.alerts > 0 ? `<span class="badge badge-${c.alerts>5?'critical':'warning'}">${c.alerts}</span>` : '—'}</td>
+    <td>
+      <div class="flex-center gap-8">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openCamPanel(${i})">View</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showToast('Edit opened','info')">Edit</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('cam-grid-view').style.display = v === 'grid' ? 'grid' : 'none';
+  document.getElementById('cam-list-view').style.display = v === 'list' ? 'block' : 'none';
+  document.getElementById('grid-btn').classList.toggle('active', v === 'grid');
+  document.getElementById('list-btn').classList.toggle('active', v === 'list');
+  if (v === 'list') renderList();
+}
+
+function filterCameras(q) {
+  const lq = q.toLowerCase();
+  filteredCams = CAMS.filter(c => c.name.toLowerCase().includes(lq) || c.id.toLowerCase().includes(lq));
+  renderGrid();
+}
+
+function filterByStatus(s) {
+  filteredCams = s ? CAMS.filter(c => c.status === s) : [...CAMS];
+  renderGrid();
+}
+
+function openCamPanel(idx) {
+  const c = filteredCams[idx];
+  document.getElementById('panel-cam-name').textContent   = c.id + ' — ' + c.name;
+  document.getElementById('panel-cam-loc').textContent    = c.zone;
+  document.getElementById('panel-cam-id').textContent     = c.id;
+  document.getElementById('panel-d-loc').textContent      = c.name;
+  document.getElementById('panel-zone').textContent       = c.zone;
+  document.getElementById('panel-last').textContent       = c.last;
+  document.getElementById('panel-ip').textContent         = c.ip;
+  document.getElementById('panel-people-now').textContent = c.people;
+  document.getElementById('panel-alerts-today').textContent = c.alerts;
+  document.getElementById('panel-d-status').innerHTML     = `<span class="status-dot ${c.status}">${c.status==='online'?'Online':'Offline'}</span>`;
+  const canvas = document.getElementById('panel-cam-feed');
+  canvas.width = canvas.parentElement.offsetWidth || 360; canvas.height = canvas.parentElement.offsetHeight || 200;
+  if (c.status === 'online') drawCameraFeed(canvas, { camId: c.id.replace('CAM-','') });
+  openPanel('cam-panel');
+}
+
+document.addEventListener('DOMContentLoaded', () => { renderGrid(); });
+</script>
+</body>
+</html>

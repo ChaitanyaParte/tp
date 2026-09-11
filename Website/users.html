@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Users — Women Safety Analytics</title>
+  <meta name="description" content="User management for the Women Safety Analytics platform — Admins, Officers, and Operators." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="Users" data-sub="Manage platform users and access control">
+<div class="app-shell">
+  <div class="main-area">
+    <div class="page-content">
+
+      <!-- Summary -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div>
+          <div class="stat-value">34</div><div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon critical"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div></div>
+          <div class="stat-value">4</div><div class="stat-label">Super Admins</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon info"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg></div></div>
+          <div class="stat-value">18</div><div class="stat-label">Police Officers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon warning"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div></div>
+          <div class="stat-value">12</div><div class="stat-label">Operators</div>
+        </div>
+      </div>
+
+      <!-- Tab + Filter -->
+      <div class="tabs">
+        <div class="tab active" onclick="filterRole('all', this)">All Users</div>
+        <div class="tab" onclick="filterRole('admin', this)">Admins</div>
+        <div class="tab" onclick="filterRole('police', this)">Police Officers</div>
+        <div class="tab" onclick="filterRole('operator', this)">Operators</div>
+      </div>
+
+      <div class="filters-bar mb-20" style="margin-top:-10px;">
+        <div class="search-wrap input-with-icon" style="flex:1;max-width:300px;">
+          <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
+          <input class="form-input" type="search" placeholder="Search name, email, role…" oninput="searchUsers(this.value)" />
+        </div>
+        <select class="form-select" style="width:auto;">
+          <option>All Status</option>
+          <option>Active</option>
+          <option>Inactive</option>
+          <option>Suspended</option>
+        </select>
+        <div style="margin-left:auto;">
+          <button class="btn btn-primary btn-sm" onclick="showToast('Add User form opened','info')">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add User
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Role</th><th>Email</th><th>Phone</th>
+                <th>Status</th><th>Last Active</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="user-count">Showing 1–15 of 34 users</span>
+          <div class="pagination-pages">
+            <div class="page-btn active">1</div>
+            <div class="page-btn">2</div>
+            <div class="page-btn">3</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- User Detail Panel -->
+<div class="modal-overlay" id="user-panel">
+  <div class="detail-panel">
+    <div class="detail-panel-header">
+      <div style="font-size:15px;font-weight:700;">User Details</div>
+      <button class="close-btn" onclick="closePanel('user-panel')">✕</button>
+    </div>
+    <div class="detail-panel-body">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+        <div class="user-avatar" id="panel-u-avatar" style="width:56px;height:56px;font-size:18px;font-weight:700;"></div>
+        <div>
+          <div style="font-size:16px;font-weight:700;" id="panel-u-name">—</div>
+          <div style="font-size:13px;color:var(--text-secondary);" id="panel-u-role">—</div>
+        </div>
+        <div id="panel-u-status" style="margin-left:auto;"></div>
+      </div>
+      <div class="info-row"><span class="info-label">Email</span><span class="info-value" id="panel-u-email">—</span></div>
+      <div class="info-row"><span class="info-label">Phone</span><span class="info-value" id="panel-u-phone">—</span></div>
+      <div class="info-row"><span class="info-label">Badge / ID</span><span class="info-value fw-700" id="panel-u-badge">—</span></div>
+      <div class="info-row"><span class="info-label">Zone / Station</span><span class="info-value" id="panel-u-zone">—</span></div>
+      <div class="info-row"><span class="info-label">Last Active</span><span class="info-value" id="panel-u-last">—</span></div>
+      <div class="info-row"><span class="info-label">Joined</span><span class="info-value" id="panel-u-joined">—</span></div>
+      <div style="display:flex;gap:8px;margin-top:24px;">
+        <button class="btn btn-primary" style="flex:1;justify-content:center;" onclick="showToast('Edit user form opened','info')">Edit User</button>
+        <button class="btn btn-outline" onclick="showToast('Password reset email sent','success')">Reset Password</button>
+        <button class="btn btn-ghost" style="color:var(--critical);" onclick="showToast('User suspended','error');closePanel('user-panel')">Suspend</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/layout.js"></script>
+<script src="js/main.js"></script>
+<script>
+const AVATAR_COLORS = ['#6C4CE8','#3B82F6','#22C55E','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899'];
+
+const USERS = [
+  { name:'Priya Anand',       role:'Super Admin',     email:'priya.anand@safecity.gov.in',         phone:'+91 98400 12345', badge:'ADMN-001', zone:'Central HQ',       status:'active',    last:'Just now',  joined:'Jan 2025', roleKey:'admin',    initials:'PA' },
+  { name:'Rajan Srinivasan',  role:'Deputy Admin',    email:'rajan.s@safecity.gov.in',             phone:'+91 98400 23456', badge:'ADMN-002', zone:'Central HQ',       status:'active',    last:'5 min ago', joined:'Jan 2025', roleKey:'admin',    initials:'RS' },
+  { name:'Kavitha Rao',       role:'Sub-Inspector',   email:'kavitha.rao@bangalorepd.gov.in',      phone:'+91 94490 34567', badge:'KAR-SI-0421', zone:'Zone 3 — East', status:'active',    last:'2 min ago', joined:'Mar 2025', roleKey:'police',   initials:'KR' },
+  { name:'Mohan Kumar',       role:'Head Constable',  email:'mohan.kumar@bangalorepd.gov.in',      phone:'+91 94490 45678', badge:'KAR-HC-1033', zone:'Zone 5 — South',status:'active',    last:'10 min ago',joined:'Mar 2025', roleKey:'police',   initials:'MK' },
+  { name:'Anitha Devi',       role:'Sub-Inspector',   email:'anitha.devi@bangalorepd.gov.in',      phone:'+91 94490 56789', badge:'KAR-SI-0438', zone:'Zone 1 — Central',status:'active', last:'1 hr ago',  joined:'Apr 2025', roleKey:'police',   initials:'AD' },
+  { name:'Suresh Babu',       role:'Constable',       email:'suresh.babu@bangalorepd.gov.in',      phone:'+91 94490 67890', badge:'KAR-PC-2041', zone:'Zone 7 — West',  status:'active',   last:'30 min ago',joined:'Apr 2025', roleKey:'police',   initials:'SB' },
+  { name:'Meena Nair',        role:'Operator',        email:'meena.nair@safecity.gov.in',          phone:'+91 96560 78901', badge:'OPR-007', zone:'Control Room A',   status:'active',    last:'Just now',  joined:'Feb 2025', roleKey:'operator', initials:'MN' },
+  { name:'Ramesh Gowda',      role:'Operator',        email:'ramesh.gowda@safecity.gov.in',        phone:'+91 96560 89012', badge:'OPR-008', zone:'Control Room B',   status:'active',    last:'5 min ago', joined:'Feb 2025', roleKey:'operator', initials:'RG' },
+  { name:'Divya Krishnan',    role:'Sub-Inspector',   email:'divya.k@bangalorepd.gov.in',          phone:'+91 94490 90123', badge:'KAR-SI-0452', zone:'Zone 8',        status:'active',    last:'8 min ago', joined:'May 2025', roleKey:'police',   initials:'DK' },
+  { name:'Prakash Hegde',     role:'Operator',        email:'prakash.h@safecity.gov.in',           phone:'+91 96560 01234', badge:'OPR-009', zone:'Control Room A',   status:'inactive',  last:'2 days ago',joined:'Mar 2025', roleKey:'operator', initials:'PH' },
+  { name:'Suma Venkatesh',    role:'Head Constable',  email:'suma.v@bangalorepd.gov.in',           phone:'+91 94490 12340', badge:'KAR-HC-1048', zone:'Zone 6',        status:'active',    last:'15 min ago',joined:'Apr 2025', roleKey:'police',   initials:'SV' },
+  { name:'Arun Patel',        role:'Admin',           email:'arun.p@safecity.gov.in',              phone:'+91 98400 34561', badge:'ADMN-003', zone:'Central HQ',       status:'active',    last:'1 hr ago',  joined:'Jan 2025', roleKey:'admin',    initials:'AP' },
+  { name:'Girija Shankar',    role:'Operator',        email:'girija.s@safecity.gov.in',            phone:'+91 96560 45672', badge:'OPR-010', zone:'Control Room B',   status:'suspended', last:'1 week ago',joined:'Feb 2025', roleKey:'operator', initials:'GS' },
+  { name:'Vijay Kumar',       role:'Constable',       email:'vijay.k@bangalorepd.gov.in',          phone:'+91 94490 56783', badge:'KAR-PC-2055', zone:'Zone 9',        status:'active',    last:'20 min ago',joined:'Jun 2025', roleKey:'police',   initials:'VK' },
+  { name:'Lakshmi Prasad',    role:'Operator',        email:'lakshmi.p@safecity.gov.in',           phone:'+91 96560 67894', badge:'OPR-011', zone:'Control Room A',   status:'active',    last:'3 min ago', joined:'Mar 2025', roleKey:'operator', initials:'LP' },
+];
+
+let filteredUsers = [...USERS];
+let currentRoleFilter = 'all';
+
+const statusBadge = s => {
+  const map = { active:'success', inactive:'neutral', suspended:'critical' };
+  return `<span class="badge badge-${map[s]||'neutral'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+};
+
+function renderUsers() {
+  const tbody = document.getElementById('users-tbody');
+  document.getElementById('user-count').textContent = `Showing 1–${filteredUsers.length} of ${filteredUsers.length} users`;
+  tbody.innerHTML = filteredUsers.map((u, i) => `
+  <tr onclick="openUserPanel(${i})" style="cursor:pointer;">
+    <td>
+      <div class="user-cell">
+        <div class="user-avatar" style="background:${AVATAR_COLORS[i%AVATAR_COLORS.length]}22;color:${AVATAR_COLORS[i%AVATAR_COLORS.length]};">${u.initials}</div>
+        <div><div class="user-name">${u.name}</div><div class="user-email">${u.badge}</div></div>
+      </div>
+    </td>
+    <td><span class="badge ${u.roleKey==='admin'?'badge-purple':u.roleKey==='police'?'badge-info':'badge-neutral'}">${u.role}</span></td>
+    <td class="text-sm" style="color:var(--text-secondary);">${u.email}</td>
+    <td class="text-sm" style="color:var(--text-secondary);">${u.phone}</td>
+    <td>${statusBadge(u.status)}</td>
+    <td class="text-sm text-muted">${u.last}</td>
+    <td>
+      <div class="flex-center gap-8">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openUserPanel(${i})">View</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();showToast('Edit form opened','info')">Edit</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function filterRole(role, el) {
+  currentRoleFilter = role;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  filteredUsers = role === 'all' ? [...USERS] : USERS.filter(u => u.roleKey === role);
+  renderUsers();
+}
+
+function searchUsers(q) {
+  const lq = q.toLowerCase();
+  const base = currentRoleFilter === 'all' ? USERS : USERS.filter(u => u.roleKey === currentRoleFilter);
+  filteredUsers = base.filter(u => u.name.toLowerCase().includes(lq) || u.email.toLowerCase().includes(lq) || u.role.toLowerCase().includes(lq));
+  renderUsers();
+}
+
+function openUserPanel(idx) {
+  const u = filteredUsers[idx];
+  const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+  document.getElementById('panel-u-avatar').textContent    = u.initials;
+  document.getElementById('panel-u-avatar').style.background = color + '22';
+  document.getElementById('panel-u-avatar').style.color   = color;
+  document.getElementById('panel-u-name').textContent     = u.name;
+  document.getElementById('panel-u-role').textContent     = u.role;
+  document.getElementById('panel-u-email').textContent    = u.email;
+  document.getElementById('panel-u-phone').textContent    = u.phone;
+  document.getElementById('panel-u-badge').textContent    = u.badge;
+  document.getElementById('panel-u-zone').textContent     = u.zone;
+  document.getElementById('panel-u-last').textContent     = u.last;
+  document.getElementById('panel-u-joined').textContent   = u.joined;
+  document.getElementById('panel-u-status').innerHTML     = statusBadge(u.status);
+  openPanel('user-panel');
+}
+
+document.addEventListener('DOMContentLoaded', () => { renderUsers(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alerts — Women Safety Analytics</title>
+  <meta name="description" content="Manage and review all safety alerts detected across the surveillance network." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="Alerts" data-sub="Review and manage AI-detected safety alerts">
+<div class="app-shell">
+  <div class="main-area">
+    <div class="page-content">
+
+      <!-- Summary stat cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon critical"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div></div>
+          <div class="stat-value">12</div><div class="stat-label">Active Alerts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon critical"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div>
+          <div class="stat-value">3</div><div class="stat-label">Critical (SOS)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon warning"><svg viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
+          <div class="stat-value">9</div><div class="stat-label">Warning Alerts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon success"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+          <div class="stat-value">84</div><div class="stat-label">Resolved Today</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="search-wrap input-with-icon" style="flex:1;max-width:320px;">
+          <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
+          <input class="form-input" type="search" placeholder="Search alert ID, type, location…" id="search-alerts" oninput="filterAlerts()"/>
+        </div>
+        <select class="form-select" id="filter-severity" onchange="filterAlerts()">
+          <option value="">All Severities</option>
+          <option value="critical">Critical</option>
+          <option value="warning">Warning</option>
+          <option value="info">Info</option>
+        </select>
+        <select class="form-select" id="filter-type" onchange="filterAlerts()">
+          <option value="">All Types</option>
+          <option value="SOS">SOS Gesture</option>
+          <option value="Surrounded">Woman Surrounded</option>
+          <option value="Lone">Lone Woman</option>
+          <option value="Crowd">Crowd Alert</option>
+        </select>
+        <select class="form-select" id="filter-status" onchange="filterAlerts()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="investigating">Investigating</option>
+          <option value="resolved">Resolved</option>
+        </select>
+        <input type="date" class="form-input" style="width:auto;" value="2025-08-28" onchange="filterAlerts()" />
+        <button class="btn btn-outline btn-sm" onclick="filterAlerts()">
+          <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          Filter
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header flex-between">
+          <div class="card-title">Alert Log</div>
+          <button class="btn btn-primary btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Alert ID</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Camera</th>
+                <th>Time</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span id="pagination-info">Showing 1–15 of 96 alerts</span>
+          <div class="pagination-pages">
+            <div class="page-btn active">1</div>
+            <div class="page-btn">2</div>
+            <div class="page-btn">3</div>
+            <div class="page-btn">…</div>
+            <div class="page-btn">7</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Alert Detail Panel -->
+<div class="modal-overlay" id="alert-panel">
+  <div class="detail-panel">
+    <div class="detail-panel-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--text);">Alert Details</div>
+        <div style="font-size:12px;color:var(--text-secondary);" id="panel-alert-id">ALT-0001</div>
+      </div>
+      <button class="close-btn" onclick="closePanel('alert-panel')">✕</button>
+    </div>
+    <div class="detail-panel-body">
+      <!-- Snapshot -->
+      <div class="snapshot-card" id="panel-snapshot">
+        <canvas id="panel-cam-canvas" style="width:100%;height:100%;"></canvas>
+      </div>
+
+      <div class="info-row"><span class="info-label">Alert Type</span><span class="info-value fw-700" id="panel-type">—</span></div>
+      <div class="info-row"><span class="info-label">Location</span><span class="info-value" id="panel-loc">—</span></div>
+      <div class="info-row"><span class="info-label">Camera</span><span class="info-value" id="panel-cam">—</span></div>
+      <div class="info-row"><span class="info-label">Detected At</span><span class="info-value" id="panel-time">—</span></div>
+      <div class="info-row"><span class="info-label">Severity</span><span class="info-value" id="panel-severity">—</span></div>
+      <div class="info-row"><span class="info-label">People Nearby</span><span class="info-value" id="panel-people">—</span></div>
+      <div class="info-row"><span class="info-label">Status</span><span class="info-value" id="panel-status">—</span></div>
+
+      <div style="margin-top:20px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Recommended Action</div>
+        <div style="background:var(--warning-bg);border:1px solid #FDE68A;border-radius:8px;padding:12px;font-size:13px;color:#92400E;" id="panel-action">—</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:20px;">
+        <button class="btn btn-critical" style="flex:1;justify-content:center;" onclick="showToast('Officer dispatched!','success');closePanel('alert-panel')">
+          🚨 Dispatch Officer
+        </button>
+        <button class="btn btn-outline" onclick="showToast('Alert marked resolved','success');closePanel('alert-panel')">
+          ✓ Resolve
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/layout.js"></script>
+<script src="js/main.js"></script>
+<script>
+const ALERTS = [
+  { id:'ALT-0096', type:'SOS Gesture',      loc:'MG Road Junction',      cam:'CAM-07', time:'00:31 AM', sev:'critical', status:'active',       people:4, action:'Immediately dispatch nearest patrol unit.' },
+  { id:'ALT-0095', type:'Woman Surrounded', loc:'Koramangala Market',     cam:'CAM-12', time:'12:22 AM', sev:'critical', status:'investigating', people:6, action:'Dispatch officer & review 5-min footage.' },
+  { id:'ALT-0094', type:'SOS Gesture',      loc:'Majestic Bus Stand',     cam:'CAM-21', time:'11:58 PM', sev:'critical', status:'active',       people:3, action:'Immediately dispatch nearest patrol unit.' },
+  { id:'ALT-0093', type:'Lone Woman',       loc:'HSR Layout Rd',          cam:'CAM-04', time:'11:45 PM', sev:'warning', status:'active',       people:1, action:'Monitor for 10 min. Dispatch if no movement.' },
+  { id:'ALT-0092', type:'Lone Woman Night', loc:'Electronic City Flyover', cam:'CAM-19', time:'11:37 PM', sev:'warning', status:'active',       people:1, action:'Monitor closely. Consider increasing patrol frequency.' },
+  { id:'ALT-0091', type:'Woman Surrounded', loc:'Bannerghatta Road',      cam:'CAM-33', time:'11:12 PM', sev:'critical', status:'investigating', people:5, action:'Dispatch officer & review 5-min footage.' },
+  { id:'ALT-0090', type:'Crowd Density',    loc:'Shivajinagar Bus Stand', cam:'CAM-02', time:'10:55 PM', sev:'warning', status:'active',       people:12,action:'Alert crowd control unit.' },
+  { id:'ALT-0089', type:'Lone Woman',       loc:'Jayanagar Circle',       cam:'CAM-15', time:'10:42 PM', sev:'warning', status:'resolved',     people:1, action:'Resolved – subject reached safe location.' },
+  { id:'ALT-0088', type:'Lone Woman Night', loc:'Cubbon Park Gate',       cam:'CAM-08', time:'10:18 PM', sev:'warning', status:'resolved',     people:1, action:'Resolved – subject reached safe location.' },
+  { id:'ALT-0087', type:'SOS Gesture',      loc:'BTM Layout Market',      cam:'CAM-44', time:'09:54 PM', sev:'critical', status:'resolved',     people:3, action:'Resolved – false positive confirmed by officer.' },
+  { id:'ALT-0086', type:'Woman Surrounded', loc:'Whitefield Signal',      cam:'CAM-11', time:'09:33 PM', sev:'critical', status:'resolved',     people:7, action:'Resolved – incident logged as INC-0042.' },
+  { id:'ALT-0085', type:'Crowd Density',    loc:'MG Road Junction',       cam:'CAM-07', time:'09:15 PM', sev:'info',    status:'resolved',     people:18,action:'Crowd dispersed naturally.' },
+  { id:'ALT-0084', type:'Lone Woman',       loc:'Hebbal Flyover',         cam:'CAM-31', time:'08:50 PM', sev:'warning', status:'resolved',     people:1, action:'Resolved – subject reached safe location.' },
+  { id:'ALT-0083', type:'Lone Woman Night', loc:'HSR Layout Rd',          cam:'CAM-04', time:'08:28 PM', sev:'warning', status:'resolved',     people:1, action:'Resolved.' },
+  { id:'ALT-0082', type:'SOS Gesture',      loc:'Koramangala Market',     cam:'CAM-12', time:'07:55 PM', sev:'critical', status:'resolved',     people:2, action:'Resolved – officer attended.' },
+];
+
+let filtered = [...ALERTS];
+
+function filterAlerts() {
+  const q   = (document.getElementById('search-alerts')?.value || '').toLowerCase();
+  const sev = document.getElementById('filter-severity')?.value || '';
+  const typ = document.getElementById('filter-type')?.value || '';
+  const sts = document.getElementById('filter-status')?.value || '';
+  filtered = ALERTS.filter(a =>
+    (!q   || a.id.toLowerCase().includes(q) || a.type.toLowerCase().includes(q) || a.loc.toLowerCase().includes(q)) &&
+    (!sev || a.sev === sev) &&
+    (!typ || a.type.includes(typ)) &&
+    (!sts || a.status === sts)
+  );
+  renderTable();
+}
+
+function sevBadge(s)  { return `<span class="badge badge-${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`; }
+function statBadge(s) {
+  const map = { active:'critical', investigating:'warning', resolved:'success' };
+  return `<span class="badge badge-${map[s]||'neutral'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('alerts-tbody');
+  if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#9CA3AF;padding:32px;">No alerts match the selected filters.</td></tr>'; return; }
+  tbody.innerHTML = filtered.map((a,i) => `
+  <tr onclick="openAlertPanel(${i})" style="cursor:pointer;">
+    <td style="font-weight:600;color:var(--primary);">${a.id}</td>
+    <td>${a.type}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a.loc}</td>
+    <td><span class="badge badge-neutral">${a.cam}</span></td>
+    <td style="font-size:12.5px;color:var(--text-secondary);">${a.time}</td>
+    <td>${sevBadge(a.sev)}</td>
+    <td>${statBadge(a.status)}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openAlertPanel(${i})">View</button></td>
+  </tr>`).join('');
+}
+
+function openAlertPanel(idx) {
+  const a = filtered[idx];
+  document.getElementById('panel-alert-id').textContent = a.id;
+  document.getElementById('panel-type').textContent = a.type;
+  document.getElementById('panel-loc').textContent  = a.loc;
+  document.getElementById('panel-cam').textContent  = a.cam;
+  document.getElementById('panel-time').textContent = a.time;
+  document.getElementById('panel-people').textContent = a.people + ' people in frame';
+  document.getElementById('panel-action').textContent = a.action;
+  document.getElementById('panel-severity').innerHTML = sevBadge(a.sev);
+  document.getElementById('panel-status').innerHTML   = statBadge(a.status);
+
+  // Draw snapshot
+  const c = document.getElementById('panel-cam-canvas');
+  c.width  = c.parentElement.offsetWidth  || 360;
+  c.height = c.parentElement.offsetHeight || 200;
+  drawCameraFeed(c, { camId: a.cam.replace('CAM-','') });
+
+  openPanel('alert-panel');
+}
+
+document.addEventListener('DOMContentLoaded', () => { renderTable(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics & Reports — Women Safety Analytics</title>
+  <meta name="description" content="Comprehensive analytics, reports, and detection trends for the Women Safety Analytics platform." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="Analytics &amp; Reports" data-sub="Insights, trends, and exportable reports">
+<div class="app-shell">
+  <div class="main-area">
+    <div class="page-content">
+
+      <!-- Top bar -->
+      <div class="flex-between mb-24">
+        <div class="flex-center gap-8">
+          <button class="btn btn-primary btn-sm" onclick="setFilter('today')">Today</button>
+          <button class="btn btn-outline btn-sm" onclick="setFilter('7d')">Last 7 Days</button>
+          <button class="btn btn-outline btn-sm" onclick="setFilter('30d')">Last 30 Days</button>
+          <button class="btn btn-outline btn-sm" onclick="setFilter('custom')">Custom Range</button>
+        </div>
+        <div class="flex-center gap-8">
+          <button class="btn btn-outline btn-sm" onclick="showToast('CSV exported successfully','success')">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="showToast('PDF report generated','success')">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Export PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI row -->
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span class="stat-trend up">+8%</span></div>
+          <div class="stat-value">3,841</div><div class="stat-label">Total Detections</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon critical"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><span class="stat-trend down">+4</span></div>
+          <div class="stat-value">96</div><div class="stat-label">Total Alerts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon warning"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div></div>
+          <div class="stat-value">42</div><div class="stat-label">Incidents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon success"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div><span class="stat-trend up">↑ 5%</span></div>
+          <div class="stat-value">57.1%</div><div class="stat-label">Resolution Rate</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon info"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+          <div class="stat-value">4.2m</div><div class="stat-label">Avg Response</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div></div>
+          <div class="stat-value">248</div><div class="stat-label">Active Cameras</div>
+        </div>
+      </div>
+
+      <!-- Charts Row 1 -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Detection Trends</div><div class="card-subtitle">People vs Women detected daily</div></div>
+            <select class="form-select" style="width:auto;font-size:12px;">
+              <option>Last 14 Days</option><option>Last 30 Days</option>
+            </select>
+          </div>
+          <div class="card-body" style="padding:16px 16px 8px;">
+            <canvas id="detect-trend" height="190" style="width:100%;"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Alert Types Breakdown</div><div class="card-subtitle">Distribution by category</div></div>
+          </div>
+          <div class="card-body">
+            <div class="donut-wrap">
+              <canvas id="alert-type-donut" width="140" height="140"></canvas>
+              <div class="donut-legend">
+                <div class="donut-legend-item"><span class="donut-legend-dot" style="background:#EF4444;"></span><span class="donut-legend-label">SOS Gesture</span><span class="donut-legend-value">18</span></div>
+                <div class="donut-legend-item"><span class="donut-legend-dot" style="background:#F59E0B;"></span><span class="donut-legend-label">Woman Surrounded</span><span class="donut-legend-value">24</span></div>
+                <div class="donut-legend-item"><span class="donut-legend-dot" style="background:#6C4CE8;"></span><span class="donut-legend-label">Lone Woman</span><span class="donut-legend-value">39</span></div>
+                <div class="donut-legend-item"><span class="donut-legend-dot" style="background:#3B82F6;"></span><span class="donut-legend-label">Crowd Density</span><span class="donut-legend-value">15</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 2 -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Alerts by Time of Day</div><div class="card-subtitle">Identifying peak risk hours</div></div>
+          </div>
+          <div class="card-body" style="padding:16px 16px 8px;">
+            <canvas id="time-chart" height="190" style="width:100%;"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Incident Resolution Trend</div><div class="card-subtitle">Open vs Resolved per week</div></div>
+          </div>
+          <div class="card-body" style="padding:16px 16px 8px;">
+            <canvas id="resolution-chart" height="190" style="width:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row 3 -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Top Alert Locations</div><div class="card-subtitle">By number of alerts this period</div></div>
+          </div>
+          <div class="card-body" style="padding:16px 16px 8px;">
+            <canvas id="loc-bar" height="190" style="width:100%;"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Gender Distribution</div><div class="card-subtitle">All camera detections combined</div></div>
+          </div>
+          <div class="card-body">
+            <div class="donut-wrap">
+              <canvas id="gender-donut-a" width="140" height="140"></canvas>
+              <div class="donut-legend">
+                <div class="donut-legend-item"><span class="donut-legend-dot" style="background:#6C4CE8;"></span><span class="donut-legend-label">Women</span><span class="donut-legend-value" style="margin-left:24px;">42.4%</span></div>
+                <div class="donut-legend-item"><span class="donut-legend-dot" style="background:#3B82F6;"></span><span class="donut-legend-label">Men</span><span class="donut-legend-value" style="margin-left:24px;">57.6%</span></div>
+                <div style="margin-top:12px;padding:10px;background:var(--primary-light);border-radius:8px;font-size:12px;color:var(--primary);">
+                  <strong>1,629 Women</strong> detected out of 3,841 total today
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- High-Risk Locations Table -->
+      <div class="card">
+        <div class="card-header flex-between">
+          <div><div class="card-title">High-Risk Location Analysis</div><div class="card-subtitle">Comprehensive summary per hotspot</div></div>
+          <button class="btn btn-outline btn-sm" onclick="showToast('Report generated','success')">Generate Report</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Location</th><th>Zone</th><th>Cameras</th><th>Detections</th>
+                <th>Women</th><th>Alerts</th><th>Incidents</th><th>Risk Score</th><th>Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style="font-weight:600;">MG Road Junction</td><td>Zone 3</td><td>4</td><td>842</td><td>398</td><td><span class="badge badge-critical">47</span></td><td>11</td><td><span style="font-weight:700;color:#EF4444;">88/100</span></td><td><span class="stat-trend down">↑ 12%</span></td></tr>
+              <tr><td style="font-weight:600;">Koramangala Market</td><td>Zone 5</td><td>3</td><td>621</td><td>310</td><td><span class="badge badge-critical">34</span></td><td>7</td><td><span style="font-weight:700;color:#EF4444;">76/100</span></td><td><span class="stat-trend down">↑ 8%</span></td></tr>
+              <tr><td style="font-weight:600;">Majestic Bus Stand</td><td>Zone 1</td><td>5</td><td>1148</td><td>531</td><td><span class="badge badge-warning">29</span></td><td>9</td><td><span style="font-weight:700;color:#F59E0B;">71/100</span></td><td><span class="stat-trend neutral">↔ 0%</span></td></tr>
+              <tr><td style="font-weight:600;">Bannerghatta Road</td><td>Zone 7</td><td>2</td><td>412</td><td>195</td><td><span class="badge badge-warning">28</span></td><td>4</td><td><span style="font-weight:700;color:#F59E0B;">58/100</span></td><td><span class="stat-trend up">↓ 3%</span></td></tr>
+              <tr><td style="font-weight:600;">Electronic City</td><td>Zone 8</td><td>3</td><td>288</td><td>134</td><td><span class="badge badge-warning">21</span></td><td>3</td><td><span style="font-weight:700;color:#F59E0B;">46/100</span></td><td><span class="stat-trend up">↓ 5%</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/layout.js"></script>
+<script src="js/main.js"></script>
+<script>
+function setFilter(f) { showToast('Date range updated: ' + f, 'info'); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Detection trends
+  drawLineChart(document.getElementById('detect-trend'), [
+    {label:'15 Aug',value:280},{label:'16 Aug',value:310},{label:'17 Aug',value:290},
+    {label:'18 Aug',value:340},{label:'19 Aug',value:380},{label:'20 Aug',value:420},
+    {label:'21 Aug',value:390},{label:'22 Aug',value:410},{label:'23 Aug',value:440},
+    {label:'24 Aug',value:460},{label:'25 Aug',value:430},{label:'26 Aug',value:480},
+    {label:'27 Aug',value:510},{label:'28 Aug',value:495},
+  ], { color: '#6C4CE8' });
+
+  // Alerts by time
+  drawBarChart(document.getElementById('time-chart'), [
+    {label:'00-04',value:4},{label:'04-08',value:2},{label:'08-12',value:8},
+    {label:'12-16',value:12},{label:'16-20',value:18},{label:'20-22',value:28},{label:'22-24',value:22},
+  ], { color: '#EF4444' });
+
+  // Resolution
+  drawLineChart(document.getElementById('resolution-chart'), [
+    {label:'W1',value:8},{label:'W2',value:12},{label:'W3',value:9},{label:'W4',value:14},{label:'W5',value:11},
+  ], { color: '#22C55E' });
+
+  // Location bar
+  drawBarChart(document.getElementById('loc-bar'), [
+    {label:'MG Rd',value:47,color:'#EF4444'},{label:'Korama.',value:34,color:'#EF4444'},
+    {label:'Majestic',value:29,color:'#F59E0B'},{label:'Banner.',value:28,color:'#F59E0B'},
+    {label:'Elec.City',value:21,color:'#F59E0B'},{label:'HSR',value:15,color:'#6C4CE8'},
+    {label:'Others',value:9,color:'#22C55E'},
+  ]);
+
+  drawDonut(document.getElementById('alert-type-donut'), [
+    {value:18,color:'#EF4444'},{value:24,color:'#F59E0B'},
+    {value:39,color:'#6C4CE8'},{value:15,color:'#3B82F6'},
+  ]);
+
+  drawDonut(document.getElementById('gender-donut-a'), [
+    {value:1629, color:'#6C4CE8'},
+    {value:2212, color:'#3B82F6'},
+  ]);
+});
+</script>
+</body>
+</html>

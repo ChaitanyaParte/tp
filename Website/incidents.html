@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Incidents — Women Safety Analytics</title>
+  <meta name="description" content="Incident management and investigation tracking for women safety cases." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body data-page="Incidents" data-sub="Manage and investigate women safety incidents">
+<div class="app-shell">
+  <div class="main-area">
+    <div class="page-content">
+
+      <!-- Summary cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon purple"><svg viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
+          <div class="stat-value">42</div><div class="stat-label">Total Incidents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon critical"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div>
+          <div class="stat-value">7</div><div class="stat-label">Open</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon warning"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div></div>
+          <div class="stat-value">11</div><div class="stat-label">Investigating</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-top"><div class="stat-icon success"><svg viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+          <div class="stat-value">24</div><div class="stat-label">Resolved</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-bar">
+        <div class="search-wrap input-with-icon" style="flex:1;max-width:300px;">
+          <span class="input-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>
+          <input class="form-input" type="search" placeholder="Search incident ID, type, location…" />
+        </div>
+        <select class="form-select" style="width:auto;">
+          <option>All Types</option>
+          <option>SOS Triggered</option>
+          <option>Assault Suspected</option>
+          <option>Harassment</option>
+          <option>Suspicious Activity</option>
+        </select>
+        <select class="form-select" style="width:auto;">
+          <option>All Status</option>
+          <option>Open</option>
+          <option>Investigating</option>
+          <option>Resolved</option>
+          <option>Closed</option>
+        </select>
+        <input type="date" class="form-input" style="width:auto;" value="2025-08-28" />
+        <div style="margin-left:auto;">
+          <button class="btn btn-primary btn-sm" onclick="showToast('New incident form opened','info')">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Incident
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="card-header flex-between">
+          <div class="card-title">Incident Log</div>
+          <div class="flex-center gap-8">
+            <button class="btn btn-outline btn-sm" onclick="showToast('Exported to CSV','success')">
+              <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Incident ID</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Date & Time</th>
+                <th>Status</th>
+                <th>Assigned Officer</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="incident-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <span>Showing 1–12 of 42 incidents</span>
+          <div class="pagination-pages">
+            <div class="page-btn active">1</div>
+            <div class="page-btn">2</div>
+            <div class="page-btn">3</div>
+            <div class="page-btn">4</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Incident Detail Panel -->
+<div class="modal-overlay" id="incident-panel">
+  <div class="detail-panel" style="width:480px;">
+    <div class="detail-panel-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;">Incident Details</div>
+        <div style="font-size:12px;color:var(--text-secondary);" id="panel-inc-id">INC-0001</div>
+      </div>
+      <button class="close-btn" onclick="closePanel('incident-panel')">✕</button>
+    </div>
+    <div class="detail-panel-body">
+      <!-- Snapshot -->
+      <div class="snapshot-card">
+        <canvas id="inc-cam-canvas" style="width:100%;height:100%;"></canvas>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div><div style="font-size:11px;color:var(--text-secondary);">Type</div><div style="font-weight:600;font-size:13.5px;" id="panel-inc-type">—</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);">Status</div><div id="panel-inc-status">—</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);">Location</div><div style="font-size:13.5px;" id="panel-inc-loc">—</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);">Date & Time</div><div style="font-size:13.5px;" id="panel-inc-time">—</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);">Assigned Officer</div><div style="font-size:13.5px;font-weight:600;" id="panel-inc-officer">—</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);">Camera</div><div style="font-size:13.5px;" id="panel-inc-cam">—</div></div>
+      </div>
+
+      <!-- Timeline -->
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Timeline</div>
+      <div class="timeline" id="panel-timeline"></div>
+
+      <!-- Notes -->
+      <div style="margin-top:20px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Officer Notes</div>
+        <textarea class="form-textarea" rows="3" placeholder="Add notes about this incident…"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <select class="form-select" style="flex:1;">
+          <option>Update Status</option>
+          <option>Open</option>
+          <option>Investigating</option>
+          <option>Resolved</option>
+          <option>Closed</option>
+        </select>
+        <button class="btn btn-primary" onclick="showToast('Status updated','success');closePanel('incident-panel')">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/layout.js"></script>
+<script src="js/main.js"></script>
+<script>
+const INCIDENTS = [
+  { id:'INC-0042', type:'SOS Triggered',       loc:'Koramangala Market',    cam:'CAM-12', time:'28 Aug 2025, 12:22 AM', status:'investigating', officer:'SI Kavitha Rao',    sev:'critical' },
+  { id:'INC-0041', type:'Assault Suspected',   loc:'MG Road Junction',      cam:'CAM-07', time:'27 Aug 2025, 09:17 PM', status:'investigating', officer:'SI Rajan S',        sev:'critical' },
+  { id:'INC-0040', type:'Harassment',          loc:'Majestic Bus Stand',    cam:'CAM-21', time:'27 Aug 2025, 07:45 PM', status:'open',          officer:'Unassigned',         sev:'warning'  },
+  { id:'INC-0039', type:'SOS Triggered',       loc:'BTM Layout Market',     cam:'CAM-44', time:'27 Aug 2025, 06:30 PM', status:'resolved',      officer:'SI Priya Sharma',   sev:'critical' },
+  { id:'INC-0038', type:'Suspicious Activity', loc:'Whitefield Signal',     cam:'CAM-11', time:'27 Aug 2025, 05:12 PM', status:'resolved',      officer:'HC Mohan Kumar',    sev:'warning'  },
+  { id:'INC-0037', type:'Woman Surrounded',    loc:'Bannerghatta Road',     cam:'CAM-33', time:'27 Aug 2025, 11:12 PM', status:'investigating', officer:'SI Kavitha Rao',    sev:'critical' },
+  { id:'INC-0036', type:'Lone Woman',          loc:'HSR Layout Rd',         cam:'CAM-04', time:'26 Aug 2025, 11:45 PM', status:'resolved',      officer:'SI Priya Sharma',   sev:'warning'  },
+  { id:'INC-0035', type:'SOS Triggered',       loc:'Electronic City Flyover',cam:'CAM-19',time:'26 Aug 2025, 11:30 PM', status:'open',          officer:'Unassigned',         sev:'critical' },
+  { id:'INC-0034', type:'Crowd Incident',      loc:'Shivajinagar Bus Stand',cam:'CAM-02', time:'26 Aug 2025, 10:05 PM', status:'resolved',      officer:'HC Mohan Kumar',    sev:'warning'  },
+  { id:'INC-0033', type:'Harassment',          loc:'Cubbon Park Gate',      cam:'CAM-08', time:'25 Aug 2025, 09:22 PM', status:'resolved',      officer:'SI Rajan S',        sev:'warning'  },
+  { id:'INC-0032', type:'SOS Triggered',       loc:'MG Road Junction',      cam:'CAM-07', time:'25 Aug 2025, 08:51 PM', status:'investigating', officer:'SI Priya Sharma',   sev:'critical' },
+  { id:'INC-0031', type:'Suspicious Activity', loc:'Jayanagar Circle',      cam:'CAM-15', time:'24 Aug 2025, 07:33 PM', status:'resolved',      officer:'HC Mohan Kumar',    sev:'info'     },
+];
+
+const statusMap = { open:'critical', investigating:'warning', resolved:'success', closed:'neutral' };
+
+function incStatusBadge(s) { return `<span class="badge badge-${statusMap[s]||'neutral'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`; }
+function sevBadge(s) { return `<span class="badge badge-${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`; }
+
+const TIMELINES = [
+  [
+    { label:'Alert Triggered', time:'12:22 AM - AI detected SOS gesture on CAM-12' },
+    { label:'Officer Notified', time:'12:23 AM - SI Kavitha Rao assigned' },
+    { label:'Investigation Started', time:'12:25 AM - Footage review in progress' },
+  ],
+  [
+    { label:'Alert Triggered', time:'09:17 PM - Unusual group formation detected' },
+    { label:'Officer Dispatched', time:'09:18 PM - SI Rajan S dispatched to location' },
+    { label:'On-site Arrival', time:'09:31 PM - Officer arrived at MG Road' },
+    { label:'Statements Collected', time:'09:55 PM - Witness statements in progress' },
+  ],
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tbody = document.getElementById('incident-tbody');
+  tbody.innerHTML = INCIDENTS.map((inc, i) => `
+  <tr onclick="openIncPanel(${i})" style="cursor:pointer;">
+    <td style="font-weight:600;color:var(--primary);">${inc.id}</td>
+    <td>${inc.type}</td>
+    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${inc.loc}</td>
+    <td style="font-size:12.5px;color:var(--text-secondary);">${inc.time}</td>
+    <td>${incStatusBadge(inc.status)}</td>
+    <td><div class="user-cell"><div class="user-avatar" style="background:var(--primary-light);color:var(--primary);font-size:10px;">${inc.officer === 'Unassigned' ? '?' : inc.officer.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><span style="font-size:13px;">${inc.officer}</span></div></td>
+    <td>
+      <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openIncPanel(${i})">View</button>
+    </td>
+  </tr>`).join('');
+});
+
+function openIncPanel(idx) {
+  const inc = INCIDENTS[idx];
+  document.getElementById('panel-inc-id').textContent     = inc.id;
+  document.getElementById('panel-inc-type').textContent   = inc.type;
+  document.getElementById('panel-inc-loc').textContent    = inc.loc;
+  document.getElementById('panel-inc-time').textContent   = inc.time;
+  document.getElementById('panel-inc-officer').textContent= inc.officer;
+  document.getElementById('panel-inc-cam').textContent    = inc.cam;
+  document.getElementById('panel-inc-status').innerHTML   = incStatusBadge(inc.status);
+
+  const c = document.getElementById('inc-cam-canvas');
+  c.width = c.parentElement.offsetWidth || 400; c.height = c.parentElement.offsetHeight || 200;
+  drawCameraFeed(c, { camId: inc.cam.replace('CAM-','') });
+
+  const tl = document.getElementById('panel-timeline');
+  const tlData = TIMELINES[idx % TIMELINES.length];
+  tl.innerHTML = tlData.map(t => `
+  <div class="timeline-item">
+    <div class="timeline-dot">✓</div>
+    <div class="timeline-content">
+      <div class="timeline-title">${t.label}</div>
+      <div class="timeline-time">${t.time}</div>
+    </div>
+  </div>`).join('');
+
+  openPanel('incident-panel');
+}
+</script>
+</body>
+</html>

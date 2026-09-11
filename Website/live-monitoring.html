@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Monitoring — Women Safety Analytics</title>
+  <meta name="description" content="Real-time CCTV surveillance monitoring with AI-powered gender detection and alert overlays." />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .cam-list { display: flex; flex-direction: column; gap: 4px; }
+    .cam-list-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      border: 1px solid transparent; transition: all .15s;
+    }
+    .cam-list-item:hover { background: var(--bg); }
+    .cam-list-item.active { background: var(--primary-light); border-color: var(--primary); }
+    .cam-list-item.active .cam-name { color: var(--primary); }
+    .cam-thumb-mini {
+      width: 52px; height: 36px; border-radius: 6px;
+      background: #0F0F14; flex-shrink: 0; overflow: hidden;
+      position: relative;
+    }
+    .cam-thumb-mini canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .cam-name { font-size: 13px; font-weight: 600; color: var(--text); }
+    .cam-loc  { font-size: 11px; color: var(--text-secondary); }
+    .main-feed-wrap { position: relative; }
+    .detection-stats-grid {
+      display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; margin-top: 14px;
+    }
+    .det-stat { background: var(--bg); border-radius: 8px; padding: 12px; text-align: center; }
+    .det-stat-val { font-size: 20px; font-weight: 700; }
+    .det-stat-lbl { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  </style>
+</head>
+<body data-page="Live Monitoring" data-sub="Real-time AI surveillance across all camera feeds">
+<div class="app-shell">
+  <div class="main-area">
+    <div class="page-content">
+
+      <!-- Filters -->
+      <div class="filters-bar mb-20">
+        <select class="form-select" style="width:auto;" id="filter-type">
+          <option>All Cameras</option>
+          <option>Active Only</option>
+          <option>Offline</option>
+        </select>
+        <select class="form-select" style="width:auto;" id="filter-loc">
+          <option>All Locations</option>
+          <option>MG Road</option>
+          <option>Koramangala</option>
+          <option>HSR Layout</option>
+          <option>Electronic City</option>
+        </select>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Grid View
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="location.href='alerts.html'">
+            <svg viewBox="0 0 24 24" fill="none" width="13" height="13" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            View Alerts (12)
+          </button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:260px 1fr;gap:20px;">
+        <!-- Camera List -->
+        <div class="card" style="height:fit-content;">
+          <div class="card-header">
+            <div class="card-title">Cameras</div>
+            <span class="badge badge-success">230 Online</span>
+          </div>
+          <div class="card-body" style="padding:10px;">
+            <div class="cam-list" id="cam-list"></div>
+          </div>
+        </div>
+
+        <!-- Main Feed -->
+        <div>
+          <div class="card mb-20">
+            <div class="card-header">
+              <div>
+                <div class="card-title" id="main-cam-title">CAM-07 — MG Road Junction</div>
+                <div class="card-subtitle" id="main-cam-loc">MG Road, Bangalore · Zone 3</div>
+              </div>
+              <span class="live-dot">LIVE</span>
+            </div>
+            <div class="card-body" style="padding:16px;">
+              <div class="camera-feed" id="main-cam"></div>
+              <div class="detection-stats-grid">
+                <div class="det-stat"><div class="det-stat-val">6</div><div class="det-stat-lbl">Total People</div></div>
+                <div class="det-stat"><div class="det-stat-val" style="color:#6C4CE8;">4</div><div class="det-stat-lbl">Women</div></div>
+                <div class="det-stat"><div class="det-stat-val" style="color:#3B82F6;">2</div><div class="det-stat-lbl">Men</div></div>
+                <div class="det-stat"><div class="det-stat-val" style="color:#F59E0B;">1</div><div class="det-stat-lbl">Lone Women</div></div>
+                <div class="det-stat"><div class="det-stat-val" style="color:#EF4444;">0</div><div class="det-stat-lbl">Surrounded</div></div>
+                <div class="det-stat"><div class="det-stat-val" style="color:#EF4444;">0</div><div class="det-stat-lbl">SOS Gestures</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Camera quick grid (tiny previews) -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">All Camera Feeds — Grid</div>
+              <span class="text-sm text-muted">Click to switch view</span>
+            </div>
+            <div class="card-body" style="padding:14px;">
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;" id="cam-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/layout.js"></script>
+<script src="js/main.js"></script>
+<script>
+const CAMERAS = [
+  { id:'07', name:'CAM-07', loc:'MG Road Junction',     zone:'Zone 3', status:'online', people:6, women:4 },
+  { id:'12', name:'CAM-12', loc:'Koramangala Market',   zone:'Zone 5', status:'online', people:9, women:5 },
+  { id:'04', name:'CAM-04', loc:'HSR Layout',           zone:'Zone 6', status:'online', people:2, women:2 },
+  { id:'19', name:'CAM-19', loc:'Electronic City Fly.',  zone:'Zone 8', status:'online', people:4, women:1 },
+  { id:'33', name:'CAM-33', loc:'Bannerghatta Road',    zone:'Zone 7', status:'online', people:7, women:3 },
+  { id:'02', name:'CAM-02', loc:'Shivajinagar Bus Stand',zone:'Zone 1', status:'online', people:11,women:6 },
+  { id:'15', name:'CAM-15', loc:'Jayanagar Circle',     zone:'Zone 4', status:'offline',people:0, women:0 },
+  { id:'08', name:'CAM-08', loc:'Cubbon Park Gate',     zone:'Zone 2', status:'online', people:3, women:2 },
+  { id:'21', name:'CAM-21', loc:'Majestic Bus Stand',   zone:'Zone 1', status:'online', people:14,women:7 },
+  { id:'11', name:'CAM-11', loc:'Whitefield Signal',    zone:'Zone 9', status:'online', people:5, women:3 },
+  { id:'31', name:'CAM-31', loc:'Hebbal Flyover',       zone:'Zone 10',status:'offline',people:0, women:0 },
+  { id:'44', name:'CAM-44', loc:'BTM Layout',           zone:'Zone 6', status:'online', people:4, women:2 },
+];
+
+let activeCamIdx = 0;
+
+// Render sidebar camera list
+const camList = document.getElementById('cam-list');
+CAMERAS.forEach((c, i) => {
+  const el = document.createElement('div');
+  el.className = 'cam-list-item' + (i === 0 ? ' active' : '');
+  el.innerHTML = `
+    <div class="cam-thumb-mini"><canvas id="mini-${c.id}"></canvas></div>
+    <div style="flex:1;min-width:0;">
+      <div class="cam-name">${c.name}</div>
+      <div class="cam-loc">${c.loc}</div>
+    </div>
+    <span class="status-dot ${c.status}" title="${c.status}"></span>
+  `;
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.cam-list-item').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    activeCamIdx = i;
+    document.getElementById('main-cam-title').textContent = `${c.name} — ${c.loc}`;
+    document.getElementById('main-cam-loc').textContent = `${c.loc} · ${c.zone}`;
+  });
+  camList.appendChild(el);
+});
+
+// Mini grid
+const camGrid = document.getElementById('cam-grid');
+CAMERAS.slice(0, 8).forEach(c => {
+  const el = document.createElement('div');
+  el.style.cssText = 'background:#0F0F14;border-radius:8px;aspect-ratio:16/9;overflow:hidden;cursor:pointer;position:relative;';
+  const canvas = document.createElement('canvas');
+  el.appendChild(canvas);
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'position:absolute;bottom:5px;left:6px;font-size:9px;font-weight:700;color:rgba(255,255,255,.7);';
+  lbl.textContent = c.name;
+  el.appendChild(lbl);
+  if (c.status === 'offline') {
+    el.style.background = '#1A1A1A';
+    lbl.textContent = c.name + ' (Offline)';
+    lbl.style.color = '#666';
+  } else {
+    drawCameraFeed(canvas, { camId: c.id, people: PEOPLE_DATA.slice(0, c.women) });
+  }
+  camGrid.appendChild(el);
+});
+
+// Main feed
+document.addEventListener('DOMContentLoaded', () => {
+  const camEl = document.getElementById('main-cam');
+  const canvas = document.createElement('canvas');
+  camEl.appendChild(canvas);
+  drawCameraFeed(canvas, { camId: '07' });
+
+  // Mini thumbs
+  CAMERAS.forEach(c => {
+    const mc = document.getElementById('mini-' + c.id);
+    if (mc && c.status === 'online') {
+      mc.width = mc.offsetWidth || 52; mc.height = mc.offsetHeight || 36;
+      drawCameraFeed(mc, { camId: c.id, people: PEOPLE_DATA.slice(0,2) });
+    }
+  });
+});
+</script>
+</body>
+</html>
